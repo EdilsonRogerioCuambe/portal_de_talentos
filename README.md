@@ -51,7 +51,7 @@ O Portal de Talentos é uma aplicação web full-stack desenvolvida para empresa
 
 #### 1. Clone o repositório
 ```bash
-git clone https://github.com/seu-usuario/portal-talentos.git
+git clone https://github.com/EdilsonRogerioCuambe/portal_de_talentos
 cd portal-talentos
 ```
 
