@@ -4,12 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "node ace serve --watch",
-    "build": "node ace build --production --ignore-ts-errors",
+    "build": "node ace build --production",
     "start": "node server.js",
-    "test": "node ace test",
-    "clean": "rm -rf build",
-    "fix": "npm cache clean --force && rm -rf node_modules package-lock.json && npm install",
-    "type-check": "tsc --noEmit"
+    "test": "node ace test"
   },
   "devDependencies": {
     "@adonisjs/assembler": "^5.9.6",
