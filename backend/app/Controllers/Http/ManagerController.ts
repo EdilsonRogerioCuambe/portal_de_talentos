@@ -348,6 +348,58 @@ export default class ManagerController {
     });
   }
 
+  public async cancelInterview({
+    auth,
+    response,
+    params,
+  }: HttpContextContract) {
+    await auth.authenticate();
+    const manager = auth.user as User;
+    if (manager.role !== "manager") {
+      return response.forbidden({ message: "Acesso negado" });
+    }
+
+    const candidate = await User.find(params.id);
+    if (
+      !candidate ||
+      candidate.role !== "candidate" ||
+      !candidate.selectedForInterview
+    ) {
+      return response.notFound({
+        message: "Candidato não encontrado ou sem entrevista agendada",
+      });
+    }
+
+    candidate.selectedForInterview = false;
+    candidate.interviewDate = undefined;
+    candidate.interviewTime = undefined;
+    await candidate.save();
+
+    try {
+      await this.sendInterviewCancelledEmail(candidate, manager);
+    } catch (error) {
+      Logger.warn("Erro ao enviar email de cancelamento de entrevista:", error);
+    }
+
+    return response.ok({ message: "Entrevista cancelada com sucesso" });
+  }
+
+  private async sendInterviewCancelledEmail(candidate: User, manager: User) {
+    const emailTemplate = this.getInterviewCancelledTemplate({
+      candidateName: candidate.name,
+      managerName: manager.name,
+      frontendUrl: process.env.FRONTEND_URL || "#",
+    });
+
+    await Mail.send((message) => {
+      message
+        .from(process.env.MAIL_FROM_ADDRESS!, process.env.MAIL_FROM_NAME!)
+        .to(candidate.email)
+        .subject("❌ Entrevista Cancelada - Portal de Talentos")
+        .html(emailTemplate);
+    });
+  }
+
   private getInterviewScheduledTemplate(data: {
     candidateName: string;
     managerName: string;
@@ -803,6 +855,52 @@ export default class ManagerController {
             <p>© 2025 Portal de Talentos. Todos os direitos reservados.</p>
         </div>
     </div>
+</body>
+</html>`;
+  }
+
+  private getInterviewCancelledTemplate(data: {
+    candidateName: string;
+    managerName: string;
+    frontendUrl: string;
+  }): string {
+    return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Entrevista Cancelada</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; color: #333; padding: 20px; }
+    .container { background: #fff; border-radius: 8px; padding: 30px; max-width: 600px; margin: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .header { text-align: center; border-bottom: 3px solid #dc3545; margin-bottom: 20px; }
+    .header h1 { color: #dc3545; }
+    .content p { margin: 15px 0; line-height: 1.6; }
+    .button { display: inline-block; padding: 12px 24px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>❌ Entrevista Cancelada</h1>
+    </div>
+    <div class="content">
+      <p>Olá, <strong>${data.candidateName}</strong>,</p>
+      <p>
+        Infelizmente, a entrevista agendada com <strong>${data.managerName}</strong> foi cancelada.
+        Caso queira reagendar, acesse o portal abaixo para escolher uma nova data e horário.
+      </p>
+      <p>
+        <a href="${data.frontendUrl}" class="button">Reagendar Entrevista</a>
+      </p>
+      <p>Se tiver dúvidas, responda a este e-mail ou consulte nosso portal.</p>
+    </div>
+    <div class="footer">
+      <p>Este é um e-mail automático, por favor não responda diretamente.</p>
+      <p>© 2025 Portal de Talentos. Todos os direitos reservados.</p>
+    </div>
+  </div>
 </body>
 </html>`;
   }
