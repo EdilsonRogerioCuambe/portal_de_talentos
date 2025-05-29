@@ -12,14 +12,16 @@ O Portal de Talentos é uma aplicação web full-stack desenvolvida para empresa
 - **AdonisJS V5** - Framework Node.js robusto e elegante
 - **MySQL** - Banco de dados relacional
 - **JWT** - Autenticação segura
-- **Nodemailer** - Sistema de envio de emails
 - **ViaCEP API** - Preenchimento automático de endereços
 
 ### Frontend
 - **React** - Biblioteca JavaScript para interfaces
 - **React Router** - Roteamento do lado do cliente
 - **Axios** - Cliente HTTP para requisições
-- **CSS Modules** - Estilização modular
+- **Tailwind CSS** - Estilização moderna e responsiva
+- **React Hook Form** - Gerenciamento de formulários
+- **Yup** - Validação de formulários
+- **Lucide React** - Ícones SVG para React
 
 ## ✨ Funcionalidades
 
@@ -43,11 +45,11 @@ O Portal de Talentos é uma aplicação web full-stack desenvolvida para empresa
 ## 🛠️ Instalação e Configuração
 
 ### Pré-requisitos
-- Node.js (v16 ou superior)
+- Node.js (19)
 - MySQL (v8.0 ou superior)
 - NPM ou Yarn
 
-### Opção 1: Instalação Manual
+### Instalação
 
 #### 1. Clone o repositório
 ```bash
@@ -62,7 +64,7 @@ npm install
 
 # Copie e configure o arquivo de ambiente
 cp .env.example .env
-# Edite o .env com suas configurações
+# Edite o .env com suas configurações (veja seção Variáveis de Ambiente)
 
 # Execute as migrations
 npm run migration:run
@@ -81,37 +83,97 @@ npm install
 
 # Copie e configure o arquivo de ambiente
 cp .env.example .env
-# Configure a URL da API
+# Configure a URL da API (veja seção Variáveis de Ambiente)
 
 # Inicie a aplicação
 npm start
 ```
 
-### Opção 2: Docker (Recomendado)
+## ⚙️ Variáveis de Ambiente
 
-```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/portal-talentos.git
-cd portal-talentos
+### Backend (.env)
+Configure o arquivo `.env` no diretório backend com as seguintes variáveis:
 
-# Configure os arquivos .env em backend e frontend
+```env
+# Server Configuration
+PORT=3333
+HOST=0.0.0.0
+NODE_ENV=development
+APP_KEY=_cDV3YN9CEoYn97ZRT87VNjn7vAB2umN
+DRIVE_DISK=local
 
-# Suba todos os serviços
-docker-compose up -d
+# Database Configuration
+DB_CONNECTION=mysql
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=
+MYSQL_DB_NAME=portal_talentos
 
-# Execute as migrations
-docker-compose exec backend npm run migration:run
+# JWT Configuration
+JWT_SECRET=your-jwt-secret-here
+JWT_EXPIRES_IN=7d
+LOG_LEVEL=debug
 
-# Execute os seeds
-docker-compose exec backend npm run seed
+# Email Configuration
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=
+MAIL_PASSWORD="mcwf bdhc fcff vyxp"
+MAIL_ENCRYPTION=tls
+MAIL_SECURE=false
+MAIL_IGNORE_TLS=false
+MAIL_FROM_ADDRESS=
+MAIL_FROM_NAME="Portal de Talentos"
+
+# URLs
+VIACEP_BASE_URL=https://viacep.com.br/ws
+FRONTEND_URL=http://localhost:3000
+
+# Session Configuration
+SESSION_DRIVER=cookie
+SESSION_COOKIE_NAME=adonis-session
+
+# CORS Configuration
+CORS_ENABLED=true
+CORS_ORIGIN=http://localhost:3000
+
+# Security
+HASH_DRIVER=scrypt
 ```
+
+### Frontend (.env)
+Configure o arquivo `.env` no diretório frontend:
+
+```env
+REACT_APP_API_URL=http://localhost:3333
+```
+
+### 📝 Observações Importantes sobre as Variáveis
+
+#### Configuração de Email
+- O `MAIL_PASSWORD` já está configurado com uma senha de app do Gmail
+- Para usar seu próprio email, você precisa gerar uma **Senha de App** nas configurações de segurança da sua conta Google
+- Não use sua senha normal do Gmail no `MAIL_PASSWORD`
+- Ative a autenticação de 2 fatores antes de gerar a senha de app
+
+#### Segurança
+- **Nunca commite** arquivos `.env` no repositório para produção
+- Gere uma nova `APP_KEY` para produção usando: `node ace generate:key`
+- Use um `JWT_SECRET` forte e único para produção
+- Para produção, altere as credenciais de banco de dados e email
+
+#### Banco de Dados
+- Certifique-se de que o MySQL está rodando na porta 3306
+- Crie o banco de dados `portal_talentos` antes de executar as migrations
+- Para produção, use credenciais de banco mais seguras
 
 ## 🌐 Acessos
 
 ### Desenvolvimento Local
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:3333
-- **phpMyAdmin**: http://localhost:8080 (usuário: root, senha: root)
 
 ### Usuários de Teste
 Após executar os seeds, você terá os seguintes usuários:
@@ -130,32 +192,39 @@ Após executar os seeds, você terá os seguintes usuários:
 
 #### Autenticação
 ```
-POST /api/auth/login       # Login de usuário
-POST /api/auth/logout      # Logout
-POST /api/auth/refresh     # Renovar token
+POST /auth/register        # Registro de usuário
+POST /auth/login          # Login de usuário
+POST /auth/test-email     # Teste de envio de email
 ```
 
-#### Candidatos
+#### Usuários Autenticados
 ```
-GET    /api/candidates        # Listar candidatos (gestores)
-POST   /api/candidates        # Cadastrar candidato
-GET    /api/candidates/:id    # Visualizar candidato
-PUT    /api/candidates/:id    # Atualizar candidato
-POST   /api/candidates/select # Selecionar para entrevista
-```
-
-#### Usuários
-```
-POST /api/users/register      # Registro de usuário
-POST /api/users/set-password  # Definir senha
-GET  /api/users/profile       # Perfil do usuário
+GET  /me                  # Dados do usuário logado
+POST /logout              # Logout
+GET  /profile             # Perfil do usuário
+PUT  /manager-profile     # Atualizar perfil do gestor
+PUT  /candidate-profile   # Atualizar perfil do candidato
+DELETE /profile           # Deletar conta
 ```
 
-#### Utilitários
+#### Gestores (Área Restrita)
 ```
-GET /api/cep/:cep            # Buscar endereço por CEP
-GET /api/skills              # Listar habilidades disponíveis
+GET  /candidates                        # Listar candidatos
+GET  /candidates/:id                    # Visualizar candidato específico
+POST /candidates/:id/schedule-interview # Agendar entrevista
+PUT  /candidates/:id/reschedule-interview # Reagendar entrevista
+GET  /interviews                        # Listar entrevistas agendadas
 ```
+
+#### Utilitários (Públicos)
+```
+GET /skills        # Listar habilidades disponíveis
+GET /cep/:cep      # Buscar endereço por CEP
+```
+
+### Autenticação
+- Todas as rotas protegidas requerem token JWT no header: `Authorization: Bearer {token}`
+- Rotas de gestor requerem role `manager`
 
 ## 🗄️ Estrutura do Banco de Dados
 
@@ -214,23 +283,10 @@ npm test
 - [ ] Sistema de templates de email personalizáveis
 - [ ] Relatórios avançados em PDF
 
-## 🤝 Contribuição
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
 ## 📝 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ## 👥 Autores
 
-- **Desenvolvedor** - *Trabalho inicial* - [SeuPerfil](https://github.com/seu-usuario)
-
-## 🙏 Agradecimentos
-- Equipe AdonisJS pela excelente documentação
-- Comunidade React pelas melhores práticas
-- ViaCEP pela API gratuita de CEP
+- **Desenvolvedor** - *Trabalho inicial* - [EdilsonRogerioCuambe](https://github.com/EdilsonRogerioCuambe)
