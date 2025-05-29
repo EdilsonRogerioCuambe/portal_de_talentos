@@ -248,20 +248,6 @@ cd frontend
 npm test
 ```
 
-## 📦 Deploy
-
-### Produção
-1. Configure as variáveis de ambiente para produção
-2. Execute o build do frontend: `npm run build`
-3. Configure o servidor web (Nginx/Apache)
-4. Configure o banco de dados MySQL
-5. Execute as migrations em produção
-
-### Sugestões de Hosting
-- **Backend**: Heroku, DigitalOcean, AWS
-- **Frontend**: Vercel, Netlify, AWS S3
-- **Banco**: AWS RDS, PlanetScale
-
 ## 🔒 Segurança Implementada
 
 - ✅ Autenticação JWT com refresh tokens
@@ -282,10 +268,6 @@ npm test
 - [ ] API de integração com LinkedIn
 - [ ] Sistema de templates de email personalizáveis
 - [ ] Relatórios avançados em PDF
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ## 👥 Autores
 
