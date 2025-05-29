@@ -76,7 +76,7 @@ npm run dev
 
 #### 3. Configuração do Frontend
 ```bash
-cd ../frontend
+cd frontend
 npm install
 
 # Copie e configure o arquivo de ambiente
