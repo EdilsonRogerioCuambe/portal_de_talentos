@@ -44,6 +44,6 @@ Route.group(() => {
     Route.get("/candidates/:id", "ManagerController.showCandidate");
     Route.post('/candidates/:id/schedule-interview', 'ManagerController.scheduleInterview');
     Route.put('/candidates/:id/reschedule-interview', 'ManagerController.rescheduleInterview');
-    Route.get("/interviews", "ManagerController.listScheduledInterviews");
+    Route.delete('/candidates/:id/cancel-interview', 'ManagerController.cancelInterview');
   }).middleware(["role:manager"]);
 }).middleware(["auth:api"]);

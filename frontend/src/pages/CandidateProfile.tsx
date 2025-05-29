@@ -13,6 +13,9 @@ const CandidateProfile = () => {
   const [interviewDate, setInterviewDate] = useState('');
   const [interviewTime, setInterviewTime] = useState('');
   const [isScheduling, setIsScheduling] = useState(false);
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+
 
   useEffect(() => {
     const loadCandidate = async () => {
@@ -46,6 +49,52 @@ const CandidateProfile = () => {
       day: '2-digit',
       timeZone: 'UTC'
     });
+  };
+
+  const reloadCandidate = async () => {
+    if (!candidate) return;
+    try {
+      const { data } = await api.get(`/candidates/${candidate.id}`);
+      setCandidate(data);
+    } catch {
+      // silently fail
+    }
+  };
+
+  const handleRescheduleInterview = async () => {
+    if (!candidate || !interviewDate || !interviewTime) return;
+    setIsScheduling(true);
+    try {
+      await api.put(`/candidates/${candidate.id}/reschedule-interview`, {
+        interview_date: interviewDate,
+        interview_time: interviewTime,
+      });
+      alert('Entrevista reagendada com sucesso!');
+      setShowInterviewModal(false);
+      setInterviewDate('');
+      setInterviewTime('');
+      setIsRescheduling(false);
+      await reloadCandidate();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Erro ao reagendar entrevista');
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
+  const handleCancelInterview = async () => {
+    if (!candidate) return;
+    if (!window.confirm('Deseja realmente cancelar esta entrevista?')) return;
+    setIsCancelling(true);
+    try {
+      await api.delete(`/candidates/${candidate.id}/cancel-interview`);
+      alert('Entrevista cancelada com sucesso!');
+      await reloadCandidate();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Erro ao cancelar entrevista');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const formatDateTime = (interviewDate?: string, interviewTime?: string) => {
@@ -170,7 +219,6 @@ const CandidateProfile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-800 mb-2">Perfil do Candidato</h1>
@@ -181,7 +229,6 @@ const CandidateProfile = () => {
           </div>
         </div>
 
-        {/* Back Button */}
         <Link
           to="/candidates"
           className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors mb-6"
@@ -190,7 +237,6 @@ const CandidateProfile = () => {
           <span>Voltar para lista</span>
         </Link>
 
-        {/* Profile Header Card */}
         <div className="bg-white rounded-2xl border-2 border-zinc-800 p-8 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -201,13 +247,13 @@ const CandidateProfile = () => {
                 <h2 className="text-2xl font-bold text-gray-900">{candidate.name}</h2>
                 <p className="text-gray-600">{candidate.email}</p>
                 <div className="flex items-center space-x-2 mt-2">
-                  <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                     Candidato
                   </span>
                   {candidate.selected_for_interview && (
-                    <span className="flex px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium items-center space-x-1">
+                    <span className="flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full space-x-1">
                       <CheckCircle className="w-3 h-3" />
-                      <span>Selecionado para Entrevista</span>
+                      <span>Selecionado</span>
                     </span>
                   )}
                 </div>
@@ -216,22 +262,47 @@ const CandidateProfile = () => {
 
             <div className="flex flex-col space-y-3">
               {candidate.selected_for_interview ? (
-                <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center justify-center space-x-2 text-green-700 mb-2">
-                    <Calendar className="w-4 h-4" />
-                    <span className="font-medium">Entrevista Agendada</span>
+                <>
+                  <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200 mb-4">
+                    <div className="flex items-center justify-center space-x-2 text-green-700 mb-2">
+                      <Calendar className="w-4 h-4" />
+                      <span className="font-medium">Entrevista Agendada</span>
+                    </div>
+                    <p className="text-sm text-green-600">
+                      {formatDateTime(candidate.interview_date, candidate.interview_time)}
+                    </p>
                   </div>
-                  <p className="text-sm text-green-600">
-                    {formatDateTime(candidate.interview_date, candidate.interview_time)}
-                  </p>
-                </div>
+                  {/* Botões Reagendar / Cancelar */}
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        setInterviewDate(candidate.interview_date?.split('T')[0] || '');
+                        setInterviewTime(candidate.interview_time || '');
+                        setIsRescheduling(true);
+                        setShowInterviewModal(true);
+                      }}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+                    >
+                      Reagendar
+                    </button>
+                    <button
+                      onClick={handleCancelInterview}
+                      disabled={isCancelling}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg disabled:opacity-50 hover:bg-red-600"
+                    >
+                      {isCancelling ? 'Cancelando...' : 'Cancelar'}
+                    </button>
+                  </div>
+                </>
               ) : (
                 <button
-                  onClick={() => setShowInterviewModal(true)}
-                  className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
+                  onClick={() => {
+                    setShowInterviewModal(true);
+                    setIsRescheduling(false);
+                  }}
+                  className="flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 shadow-lg"
                 >
-                  <Clock className="w-4 h-4" />
-                  <span>Agendar Entrevista</span>
+                  <Clock className="w-4 h-4 mr-2" /> Agendar Entrevista
                 </button>
               )}
             </div>
@@ -341,7 +412,6 @@ const CandidateProfile = () => {
               </div>
             </div>
 
-            {/* Habilidades */}
             <div className="bg-gray-50 rounded-xl p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
                 <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mr-3">
@@ -448,28 +518,18 @@ const CandidateProfile = () => {
                   setShowInterviewModal(false);
                   setInterviewDate('');
                   setInterviewTime('');
+                  setIsRescheduling(false);
                 }}
-                disabled={isScheduling}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="flex-1 border px-4 py-3"
               >
-                Cancelar
+                Fechar
               </button>
+
               <button
-                onClick={handleScheduleInterview}
-                disabled={isScheduling || !interviewDate || !interviewTime}
-                className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                onClick={isRescheduling ? handleRescheduleInterview : handleScheduleInterview}
+                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg disabled:opacity-50"
               >
-                {isScheduling ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Agendando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="w-4 h-4" />
-                    <span>Agendar</span>
-                  </>
-                )}
+                {isScheduling || isRescheduling ? 'Reagendar Entrevista' : 'Agendar Entrevista'}
               </button>
             </div>
           </div>
